@@ -15,17 +15,24 @@ final class ViewController: UITableViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
-		let urlString = "https://api.whitehouse.gov/v1/petitions.json?limit=100"
+		let urlString: String
 
-		if let url = URL(string: urlString) {
-			if let data = try? String(contentsOf: url) {
-				let json = JSON(parseJSON: data)
+		if self.navigationController?.tabBarItem.tag == 0 {
+			urlString = "https://api.whitehouse.gov/v1/petitions.json?limit=100"
+		} else {
+			urlString = "https://api.whitehouse.gov/v1/petitions.json?signatureCountFloor=10000&limit=100"
+		}
 
-				if json["metadata"]["responseInfo"]["status"].intValue == 200 {
-					self.parse(json: json)
-				}
+		if let url = URL(string: urlString), let data = try? String(contentsOf: url) {
+			let json = JSON(parseJSON: data)
+
+			if json["metadata"]["responseInfo"]["status"].intValue == 200 {
+				self.parse(json: json)
+				return
 			}
 		}
+
+		self.showError()
 	}
 
 	private func parse(json: JSON) {
@@ -38,6 +45,14 @@ final class ViewController: UITableViewController {
 		}
 
 		self.tableView.reloadData()
+	}
+
+	private func showError() {
+		let actionController = UIAlertController(title: "Loading Error",
+												 message: "There was a problem loading the feed; please check your connection and try again.",
+												 preferredStyle: .alert)
+		actionController.addAction(UIAlertAction(title: "OK", style: .default))
+		self.present(actionController, animated: true)
 	}
 
 	override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
