@@ -23,16 +23,18 @@ final class ViewController: UITableViewController {
 			urlString = "https://api.whitehouse.gov/v1/petitions.json?signatureCountFloor=10000&limit=100"
 		}
 
-		if let url = URL(string: urlString), let data = try? String(contentsOf: url) {
-			let json = JSON(parseJSON: data)
+		DispatchQueue.global(qos: .userInitiated).async { [unowned self] in
+			if let url = URL(string: urlString), let data = try? String(contentsOf: url) {
+				let json = JSON(parseJSON: data)
 
-			if json["metadata"]["responseInfo"]["status"].intValue == 200 {
-				self.parse(json: json)
-				return
+				if json["metadata"]["responseInfo"]["status"].intValue == 200 {
+					self.parse(json: json)
+					return
+				}
 			}
-		}
 
-		self.showError()
+			self.showError()
+		}
 	}
 
 	private func parse(json: JSON) {
@@ -44,15 +46,19 @@ final class ViewController: UITableViewController {
 			self.petitions.append(object)
 		}
 
-		self.tableView.reloadData()
+		DispatchQueue.main.async { [unowned self] in
+			self.tableView.reloadData()
+		}
 	}
 
 	private func showError() {
-		let actionController = UIAlertController(title: "Loading Error",
-												 message: "There was a problem loading the feed; please check your connection and try again.",
-												 preferredStyle: .alert)
-		actionController.addAction(UIAlertAction(title: "OK", style: .default))
-		self.present(actionController, animated: true)
+		DispatchQueue.main.async { [unowned self] in
+			let actionController = UIAlertController(title: "Loading Error",
+													 message: "There was a problem loading the feed; please check your connection and try again.",
+													 preferredStyle: .alert)
+			actionController.addAction(UIAlertAction(title: "OK", style: .default))
+			self.present(actionController, animated: true)
+		}
 	}
 
 	override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
